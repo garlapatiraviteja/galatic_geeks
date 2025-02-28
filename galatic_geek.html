@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Geeks - Advanced AI Research</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Adding Google Fonts that are similar to Star Trek fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Audiowide&family=Exo+2:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'StarTrekFont';
+            src: url('https://cdnjs.cloudflare.com/ajax/libs/webfont/1.6.28/webfontloader.js');
+            /* Fallback to similar fonts if the CDN version isn't available */
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Audiowide', 'Exo 2', 'Orbitron', sans-serif; /* Star Trek style fonts with fallbacks */
+        }
+        canvas {
+            display: block;
+        }
+        #titleOverlay {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: 'Audiowide', 'Exo 2', sans-serif; /* More Star Trek like font */
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #7df9ff;
+            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
+            z-index: 100;
+            letter-spacing: 4px; /* Wider letter spacing for Star Trek look */
+            text-transform: uppercase;
+        }
+        #subtitle {
+            font-size: 0.4em;
+            margin-top: 5px;
+            color: #fff;
+            text-shadow: 0 0 5px #0ff;
+            letter-spacing: 2px;
+            font-family: 'Exo 2', 'Orbitron', sans-serif; /* Alternate Star Trek style font */
+        }
+        #statusBar {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0ff;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-family: 'Audiowide', 'Orbitron', sans-serif;
+            color: #0ff;
+            z-index: 100;
+        }
+        .button {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0ff;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-family: 'Audiowide', 'Orbitron', sans-serif;
+            color: #0ff;
+            cursor: pointer;
+            text-align: center;
+            z-index: 100;
+            letter-spacing: 1px;
+        }
+        #restartButton {
+            top: 20px;
+            right: 20px;
+            width: 100px;
+            display: none;
+        }
+        #audioButton {
+            top: 60px;
+            right: 20px;
+            width: 100px;
+        }
+        /* New wormhole hint style */
+        #wormholeHint {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #7df9ff;
+            font-family: 'Audiowide', 'Orbitron', sans-serif;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 110;
+            text-shadow: 0 0 10px #0ff;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="titleOverlay">
+        GALACTIC GEEKS
+        <div id="subtitle">ADVANCED NEURAL INTERFACE RESEARCH DIVISION</div>
+    </div>
+    <div id="statusBar">SYSTEM IDLE | Click to initiate</div>
+    <div id="restartButton" class="button">RESTART</div>
+    <div id="audioButton" class="button">AUDIO: OFF</div>
+    <div id="wormholeHint">CLICK WORMHOLE TO ENTER SUBSPACE</div>
+    
+    <!-- Load P5.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    
+    <script>
+        // Cyberpunk AI Research Interactive Experience
+        let stars = [];
+        let neuralConnections = [];
+        let particles = [];
+        let terminal;
+        let glitchText = [];
+        let glitchInterval;
+        let wormhole;
+        let ship;
+        let currentSection = "intro";
+        let researchProgress = 0;
+        let vrSimActive = false;
+        let terminalFont;
+        let orbitronFont;
+        let targetNeuron = null;
+        let shipMoving = false;
+        let wormholeClickable = false;
+        let wormholeEntering = false;
+        let wormholeExplosion = false;
+        let explosionTimer = 0;
+        let wormholeShipDistance = 0;
+        let wormholeHintShown = false;
+        let researchInfo = [
+            "// SNN RESEARCH BREAKTHROUGH",
+            "// Our Spiking Neural Networks can now detect",
+            "// infrared sound patterns at -72dB, a new record",
+            "// for non-biological detection systems.",
+            "",
+            "// MEMORY OPTIMIZATION RESEARCH",
+            "// Quantum-entangled memory compression",
+            "// achieving 87.6% reduction in space while",
+            "// maintaining 99.2% data retrieval accuracy.",
+            "",
+            "// VR RESEARCH - PROJECT NOVA",
+            "// Advanced haptic feedback shooting game",
+            "// with neural pathway stimulation for",
+            "// immersive combat experience without motion sickness."
+        ];
+        
+        let statusBarDiv;
+        let restartButtonDiv;
+        let audioButtonDiv;
+        let wormholeHintDiv;
+        let audioEnabled = false;
+        let audioContext;
+        let oscillator;
+        let synthGain;
+        let hintTimeout;
+        let notificationSound;
+        let backgroundNoise;
+        let pulseSound;
+        let explosionSound;
+        let wormholeSound;
+        let reachedNodeCount = 0;
+        let p5Canvas;
+
+        // P5.js instance mode
+        const sketch = (p) => {
+            p.preload = function() {
+                // Use Star Trek style fonts as defaults
+                terminalFont = 'Audiowide, Exo 2, monospace';
+                orbitronFont = 'Audiowide, Exo 2, Orbitron, sans-serif';
+            };
+
+            p.setup = function() {
+                p.createCanvas(window.innerWidth, window.innerHeight);
+                p5Canvas = p.canvas;
+                p.colorMode(p.HSB, 360, 100, 100, 1);
+                
+                // Get DOM elements
+                statusBarDiv = document.getElementById('statusBar');
+                restartButtonDiv = document.getElementById('restartButton');
+                audioButtonDiv = document.getElementById('audioButton');
+                wormholeHintDiv = document.getElementById('wormholeHint');
+                
+                // Initialize stars
+                for (let i = 0; i < 200; i++) {
+                    stars.push({
+                        x: p.random(p.width),
+                        y: p.random(p.height),
+                        size: p.random(1, 3),
+                        speed: p.random(0.5, 2),
+                        brightness: p.random(50, 100)
+                    });
+                }
+                
+                // Initialize neural connections
+                for (let i = 0; i < 35; i++) {
+                    neuralConnections.push({
+                        x: p.random(p.width),
+                        y: p.random(p.height),
+                        connections: [],
+                        pulse: 0,
+                        pulseDirection: 1,
+                        pulseSpeed: p.random(0.01, 0.05),
+                        visited: false
+                    });
+                }
+                
+                // Connect neurons
+                for (let i = 0; i < neuralConnections.length; i++) {
+                    let neuron = neuralConnections[i];
+                    for (let j = 0; j < 3; j++) {
+                        let connectedTo = p.floor(p.random(neuralConnections.length));
+                        if (connectedTo !== i) {
+                            neuron.connections.push(connectedTo);
+                        }
+                    }
+                }
+                
+                // Initialize terminal
+                terminal = {
+                    x: p.width * 0.08,
+                    y: p.height * 0.55,
+                    width: p.width * 0.45,
+                    height: p.height * 0.38,
+                    text: [],
+                    currentLine: "",
+                    cursor: true,
+                    cursorBlink: 0
+                };
+                
+                // Initialize wormhole
+                wormhole = {
+                    x: p.width * 0.78,
+                    y: p.height * 0.3,
+                    size: 150,
+                    rotation: 0,
+                    intensity: 0,
+                    active: false,
+                    clickable: false
+                };
+                
+                // Initialize ship
+                ship = {
+                    x: p.width * 0.78,
+                    y: p.height * 0.8,
+                    size: 30,
+                    angle: 0,
+                    targetX: null,
+                    targetY: null,
+                    speed: 3,
+                    visible: true
+                };
+                
+                // Initialize audio
+                initAudio();
+                
+                // Start terminal text
+                addTerminalText("// GALACTIC GEEKS RESEARCH DIVISION");
+                addTerminalText("// NEURAL INTERFACE ACTIVE");
+                addTerminalText("$ initializing quantum neural interface...");
+                
+                // Start glitch effect interval
+                startGlitchInterval();
+                
+                // Initial section setup
+                setupSection(currentSection);
+                
+                // Set hint timeout - if user doesn't interact, show a hint
+                hintTimeout = setTimeout(showHint, 10000);
+
+                // Set up event listeners
+                p5Canvas.addEventListener('click', handleCanvasClick);
+                restartButtonDiv.addEventListener('click', restartExperience);
+                audioButtonDiv.addEventListener('click', toggleAudio);
+            };
+            
+            p.draw = function() {
+                p.background(230, 70, 5); // Dark blue background
+                
+                // Draw stars
+                drawStars();
+                
+                // Draw neural network
+                drawNeuralNetwork();
+                
+                // Draw wormhole
+                if (wormhole.active) {
+                    drawWormhole();
+                    
+                    // If wormhole is clickable but hint not shown yet, show hint
+                    if (wormhole.clickable && !wormholeHintShown && 
+                        currentSection === "breakthrough" && p.frameCount % 180 === 0) {
+                        showWormholeHint();
+                    }
+                }
+                
+                // Update ship if there's a target or entering wormhole
+                if (shipMoving && targetNeuron !== null && !wormholeEntering) {
+                    updateShipMovement();
+                } else if (wormholeEntering) {
+                    updateWormholeEntry();
+                }
+                
+                // Draw ship if visible
+                if (ship.visible) {
+                    drawShip();
+                }
+                
+                // Draw explosion if active
+                if (wormholeExplosion) {
+                    drawExplosion();
+                }
+                
+                // Update and draw particles
+                updateAndDrawParticles();
+                
+                // Draw terminal
+                drawTerminal();
+                
+                // Draw glitch text
+                drawGlitchText();
+                
+                // Update terminal cursor
+                terminal.cursorBlink++;
+                if (terminal.cursorBlink > 30) {
+                    terminal.cursor = !terminal.cursor;
+                    terminal.cursorBlink = 0;
+                }
+                
+                // Update audio oscillator for ambient sound if active
+                if (audioEnabled && currentSection === "vr" && shipMoving) {
+                    let node = neuralConnections[targetNeuron];
+                    let d = p.dist(ship.x, ship.y, node.x, node.y);
+                    let normalizedDistance = p.constrain(d / 300, 0, 1);
+                    if (oscillator) {
+                        oscillator.frequency.value = 150 + (1 - normalizedDistance) * 200;
+                    }
+                }
+            };
+
+            p.windowResized = function() {
+                p.resizeCanvas(window.innerWidth, window.innerHeight);
+                
+                // Update positions
+                terminal.x = p.width * 0.08;
+                terminal.y = p.height * 0.55;
+                terminal.width = p.width * 0.45;
+                terminal.height = p.height * 0.38;
+                
+                wormhole.x = p.width * 0.78;
+                wormhole.y = p.height * 0.3;
+                
+                if (!shipMoving && !wormholeEntering) {
+                    ship.x = p.width * 0.78;
+                    ship.y = p.height * 0.8;
+                }
+            };
+
+            function drawStars() {
+                for (let i = 0; i < stars.length; i++) {
+                    let star = stars[i];
+                    
+                    // Move star faster if entering wormhole
+                    if (wormholeEntering) {
+                        let dx = wormhole.x - star.x;
+                        let dy = wormhole.y - star.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        let angle = Math.atan2(dy, dx);
+                        let forceFactor = 1 - Math.min(1, dist / (p.width * 0.8));
+                        
+                        star.x += Math.cos(angle) * star.speed * forceFactor * 10;
+                        star.y += Math.sin(angle) * star.speed * forceFactor * 10;
+                    } else {
+                        // Normal star movement
+                        star.x -= star.speed;
+                    }
+                    
+                    // Reset position if off screen
+                    if (star.x < 0 || star.x > p.width || star.y < 0 || star.y > p.height) {
+                        star.x = p.width;
+                        star.y = p.random(p.height);
+                    }
+                    
+                    // Draw star
+                    p.noStroke();
+                    p.fill(220, 0, star.brightness);
+                    p.ellipse(star.x, star.y, star.size);
+                }
+            }
+
+            function drawNeuralNetwork() {
+                // Draw connections
+                p.stroke(200, 70, 70, 0.3);
+                p.strokeWeight(1);
+                for (let i = 0; i < neuralConnections.length; i++) {
+                    let neuron = neuralConnections[i];
+                    
+                    // If entering wormhole, move neuron toward wormhole
+                    if (wormholeEntering) {
+                        let dx = wormhole.x - neuron.x;
+                        let dy = wormhole.y - neuron.y;
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        let angle = Math.atan2(dy, dx);
+                        let forceFactor = 1 - Math.min(1, dist / (p.width * 0.8));
+                        
+                        neuron.x += Math.cos(angle) * 2 * forceFactor;
+                        neuron.y += Math.sin(angle) * 2 * forceFactor;
+                    }
+                    
+                    for (let j = 0; j < neuron.connections.length; j++) {
+                        let connected = neuralConnections[neuron.connections[j]];
+                        
+                        // Draw line with pulse effect
+                        let pulseOpacity = neuron.pulse * 0.7;
+                        
+                        // Enhanced styling for visited connections
+                        if (neuron.visited && connected.visited) {
+                            p.stroke(140, 80, 80, 0.5 + pulseOpacity);
+                            p.strokeWeight(1.5);
+                        } else {
+                            p.stroke(200, 70, 70, 0.3 + pulseOpacity);
+                            p.strokeWeight(1);
+                        }
+                        
+                        p.line(neuron.x, neuron.y, connected.x, connected.y);
+                        
+                        // Draw pulse traveling along line
+                        if (neuron.pulse > 0) {
+                            let pulsePct = neuron.pulse;
+                            let pulseX = p.lerp(neuron.x, connected.x, pulsePct);
+                            let pulseY = p.lerp(neuron.y, connected.y, pulsePct);
+                            
+                            p.noStroke();
+                            p.fill(180, 90, 100, neuron.pulse);
+                            p.ellipse(pulseX, pulseY, 5);
+                        }
+                    }
+                    
+                    // Update pulse
+                    if (neuron.pulse > 0) {
+                        neuron.pulse += neuron.pulseDirection * neuron.pulseSpeed;
+                        if (neuron.pulse >= 1) {
+                            neuron.pulse = 0;
+                            
+                            // Pulse the connected neurons
+                            for (let j = 0; j < neuron.connections.length; j++) {
+                                let connected = neuralConnections[neuron.connections[j]];
+                                connected.pulse = 0.1;
+                            }
+                        }
+                    }
+                }
+                
+                // Draw neurons
+                for (let i = 0; i < neuralConnections.length; i++) {
+                    let neuron = neuralConnections[i];
+                    
+                    // Draw glow
+                    p.noStroke();
+                    
+                    // Enhanced styling for visited neurons
+                    if (neuron.visited) {
+                        // Outer glow
+                        p.fill(180, 90, 50, 0.2);
+                        p.ellipse(neuron.x, neuron.y, 30);
+                        
+                        // Inner glow
+                        p.fill(180, 90, 70, 0.5);
+                        p.ellipse(neuron.x, neuron.y, 20);
+                        
+                        // Core
+                        p.fill(180, 80, 100, 0.8 + Math.sin(p.frameCount * 0.1) * 0.2);
+                        p.ellipse(neuron.x, neuron.y, 10);
+                    } else {
+                        // Outer glow
+                        p.fill(200, 70, 50, 0.1);
+                        p.ellipse(neuron.x, neuron.y, 25);
+                        
+                        // Core
+                        p.fill(200, 70, 70, 0.5 + Math.sin(p.frameCount * 0.05) * 0.2);
+                        p.ellipse(neuron.x, neuron.y, 8);
+                    }
+                }
+            }
+
+            function drawShip() {
+                p.push();
+                p.translate(ship.x, ship.y);
+                p.rotate(ship.angle);
+                
+                // Draw ship glow
+                p.noStroke();
+                p.fill(180, 80, 70, 0.3);
+                p.ellipse(0, 0, 40);
+                
+                // Draw ship
+                p.fill(180, 70, 90);
+                p.triangle(-15, -10, 15, 0, -15, 10);
+                
+                // Engine
+                if (shipMoving || wormholeEntering) {
+                    p.fill(20, 90, 100, 0.7 + Math.sin(p.frameCount * 0.5) * 0.3);
+                    p.triangle(-15, -5, -25, 0, -15, 5);
+                    
+                    // Add extra engine particles when entering wormhole
+                    if (wormholeEntering && p.frameCount % 2 === 0) {
+                        let angle = ship.angle + p.PI + p.random(-0.2, 0.2);
+                        particles.push({
+                            x: ship.x - Math.cos(ship.angle) * 15,
+                            y: ship.y - Math.sin(ship.angle) * 15,
+                            vx: Math.cos(angle) * p.random(2, 5),
+                            vy: Math.sin(angle) * p.random(2, 5),
+                            size: p.random(3, 7),
+                            life: 50,
+                            hue: p.random(20, 40)
+                        });
+                    }
+                }
+                
+                p.pop();
+            }
+
+            function drawWormhole() {
+                p.push();
+                p.translate(wormhole.x, wormhole.y);
+                
+                // Increase intensity slowly
+                if (wormhole.intensity < 1) {
+                    wormhole.intensity += 0.005;
+                }
+                
+                // Rotate wormhole
+                wormhole.rotation += 0.01;
+                p.rotate(wormhole.rotation);
+                
+                // Draw wormhole spiral
+                p.noFill();
+                for (let i = 0; i < 10; i++) {
+                    let alpha = p.map(i, 0, 10, 0.8, 0.2) * wormhole.intensity;
+                    let hue = p.map(i, 0, 10, 200, 280);
+                    
+                    // Change to more Star Trek-like blue/purple wormhole color
+                    if (wormhole.clickable) {
+                        hue = p.map(i, 0, 10, 180, 260);
+                    }
+                    
+                    p.stroke(hue, 80, 80, alpha);
+                    p.strokeWeight(3 - i * 0.2);
+                    
+                    // Make wormhole more dramatic when clickable
+                    let spiralSpeed = wormhole.clickable ? 0.04 : 0.02;
+                    let spiralSize = wormhole.clickable ? wormhole.size * 1.2 : wormhole.size;
+                    
+                    p.beginShape();
+                    for (let angle = 0; angle < p.TWO_PI * 3; angle += 0.1) {
+                        let radius = p.map(angle, 0, p.TWO_PI * 3, 5, spiralSize / 2);
+                        radius *= p.map(Math.sin(p.frameCount * spiralSpeed + i * 0.2), -1, 1, 0.8, 1.2);
+                        let x = Math.cos(angle + i * 0.2) * radius;
+                        let y = Math.sin(angle + i * 0.2) * radius;
+                        p.vertex(x, y);
+                    }
+                    p.endShape();
+                }
+                
+                // Draw core
+                p.noStroke();
+                if (wormhole.clickable) {
+                    // Brighter core for clickable wormhole
+                    p.fill(240, 80, 100, 0.7 * wormhole.intensity + Math.sin(p.frameCount * 0.1) * 0.3);
+                    p.ellipse(0, 0, 30 * wormhole.intensity);
+                } else {
+                    p.fill(240, 80, 100, 0.5 * wormhole.intensity);
+                    p.ellipse(0, 0, 20 * wormhole.intensity);
+                }
+                
+                // Glowing particles
+                for (let i = 0; i < 5; i++) {
+                    let angle = p.random(p.TWO_PI);
+                    let radius = p.random(5, wormhole.size / 2);
+                    let x = Math.cos(angle) * radius;
+                    let y = Math.sin(angle) * radius;
+                    
+                    p.fill(220, 80, 100, p.random(0.3, 0.8) * wormhole.intensity);
+                    p.ellipse(x, y, p.random(2, 5));
+                }
+                
+                p.pop();
+            }
+            
+            function updateWormholeEntry() {
+                // Calculate direction to wormhole
+                let dx = wormhole.x - ship.x;
+                let dy = wormhole.y - ship.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                wormholeShipDistance = distance;
+                
+                if (distance > 5) {
+                    // Move toward wormhole center
+                    let angle = Math.atan2(dy, dx);
+                    ship.angle = angle;
+                    
+                    // Speed up as ship gets closer
+                    let speedFactor = Math.max(1, 30 / distance);
+                    let shipSpeed = ship.speed * speedFactor;
+                    
+                    ship.x += Math.cos(angle) * shipSpeed;
+                    ship.y += Math.sin(angle) * shipSpeed;
+                    
+                    // Create engine particles
+                    if (p.frameCount % 2 === 0) {
+                        let randAngle = angle + p.PI + p.random(-0.2, 0.2);
+                        particles.push({
+                            x: ship.x - Math.cos(angle) * 15,
+                            y: ship.y - Math.sin(angle) * 15,
+                            vx: Math.cos(randAngle) * p.random(2, 4),
+                            vy: Math.sin(randAngle) * p.random(2, 4),
+                            size: p.random(3, 6),
+                            life: 40,
+                            hue: p.random(20, 40)
+                        });
+                    }
+                    
+                    // Create wormhole particles as ship gets closer
+                    if (distance < 100 && p.frameCount % 3 === 0) {
+                        for (let i = 0; i < 2; i++) {
+                            let particleAngle = p.random(p.TWO_PI);
+                            particles.push({
+                                x: ship.x + Math.cos(particleAngle) * p.random(10, 20),
+                                y: ship.y + Math.sin(particleAngle) * p.random(10, 20),
+                                vx: Math.cos(particleAngle) * p.random(1, 3),
+                                vy: Math.sin(particleAngle) * p.random(1, 3),
+                                size: p.random(2, 5),
+                                life: 60,
+                                hue: p.random(180, 260)
+                            });
+                        }
+                    }
+                    
+                    // Shrink ship as it approaches wormhole
+                    if (distance < 50) {
+                        ship.size = Math.max(5, 30 * (distance / 50));
+                    }
+                } else {
+                    // Ship has reached wormhole center - initiate explosion
+                    ship.visible = false;
+                    wormholeExplosion = true;
+                    explosionTimer = 0;
+                    
+                    // Create explosion particles
+                    for (let i = 0; i < 100; i++) {
+                        let angle = p.random(p.TWO_PI);
+                        let speed = p.random(1, 10);
+                        particles.push({
+                            x: wormhole.x,
+                            y: wormhole.y,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            size: p.random(3, 10),
+                            life: p.random(60, 180),
+                            hue: p.random(0, 60) // Explosion colors (red/orange/yellow)
+                        });
+                    }
+                    
+                    // Play explosion sound
+                    if (audioEnabled && explosionSound) {
+                        explosionSound.play();
+                    }
+                    
+                    // Update status
+                    statusBarDiv.innerHTML = "WORMHOLE COLLAPSE | SIMULATION RESET";
+                    
+                    // Add terminal text
+                    addTerminalText("$ WARNING: WORMHOLE INSTABILITY DETECTED");
+                    addTerminalText("$ SYSTEM OVERLOAD");
+                    addTerminalText("$ NEURAL PATHWAYS DISRUPTED");
+                }
+            }
+            
+            function drawExplosion() {
+                // Expand explosion
+                explosionTimer++;
+                
+                // Create more explosion particles
+                if (explosionTimer < 30 && p.frameCount % 3 === 0) {
+                    for (let i = 0; i < 5; i++) {
+                        let angle = p.random(p.TWO_PI);
+                        let speed = p.random(1, 8);
+                        let distance = p.random(explosionTimer * 2, explosionTimer * 3);
+                        
+                        particles.push({
+                            x: wormhole.x + Math.cos(angle) * distance,
+                            y: wormhole.y + Math.sin(angle) * distance,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            size: p.random(3, 8),
+                            life: p.random(30, 90),
+                            hue: p.random(0, 40) // Red/orange explosion colors
+                        });
+                    }
+                }
+                
+                // Draw explosion shockwave
+                p.push();
+                p.translate(wormhole.x, wormhole.y);
+                
+                p.noFill();
+                p.stroke(30, 100, 100, 1 - explosionTimer / 60);
+                p.strokeWeight(3);
+                p.ellipse(0, 0, explosionTimer * 10);
+                
+                p.stroke(10, 100, 100, 0.8 - explosionTimer / 60);
+                p.strokeWeight(2);
+                p.ellipse(0, 0, explosionTimer * 15);
+                
+                p.pop();
+                
+                // Reset experience if explosion finished
+                if (explosionTimer > 120) {
+                    wormholeExplosion = false;
+                    wormholeEntering = false;
+                    restartExperience();
+                }
+            }
+            
+            function updateAndDrawParticles() {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let particle = particles[i];
+                    
+                    // Update position
+                    particle.x += particle.vx;
+                    particle.y += particle.vy;
+                    
+                    // Update life
+                    particle.life--;
+                    
+                    // Draw particle
+                    p.noStroke();
+                    p.fill(particle.hue, 80, 100, particle.life / 60);
+                    p.ellipse(particle.x, particle.y, particle.size * (particle.life / 60));
+                    
+                    // Remove dead particles
+                    if (particle.life <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+
+            function drawTerminal() {
+                // Draw terminal background
+                p.fill(230, 70, 5, 0.9);
+                p.stroke(180, 90, 50, 0.7);
+                p.strokeWeight(1);
+                p.rect(terminal.x, terminal.y, terminal.width, terminal.height, 5);
+                
+                // Draw terminal header
+                p.fill(180, 70, 30);
+                p.rect(terminal.x, terminal.y, terminal.width, 25, 5, 5, 0, 0);
+                
+                p.fill(180, 10, 90);
+                p.noStroke();
+                p.textSize(12);
+                p.textFont(orbitronFont);
+                p.textAlign(p.LEFT, p.CENTER);
+                p.text("GCORP NEURAL TERMINAL v2.73.8", terminal.x + 10, terminal.y + 12);
+                
+                // Draw terminal text
+                p.fill(0, 0, 90);
+                p.textSize(14);
+                p.textFont(terminalFont);
+                p.textAlign(p.LEFT, p.TOP);
+                
+                for (let i = 0; i < terminal.text.length; i++) {
+                    // Skip if we don't have enough room
+                    if (i >= 15) break;
+                    
+                    p.text(terminal.text[terminal.text.length - 1 - i], 
+                        terminal.x + 10, 
+                        terminal.y + terminal.height - 25 - i * 20);
+                }
+                
+                // Draw current line with cursor
+                p.text(terminal.currentLine + (terminal.cursor ? "_" : ""), 
+                    terminal.x + 10, 
+                    terminal.y + terminal.height - 25);
+            }
+
+            function drawGlitchText() {
+                for (let i = glitchText.length - 1; i >= 0; i--) {
+                    let glitch = glitchText[i];
+                    
+                    // Update life
+                    glitch.life--;
+                    
+                    // Draw glitch text
+                    p.fill(glitch.hue, 90, 90, glitch.life / 30);
+                    p.textSize(glitch.size);
+                    p.textFont(orbitronFont);
+                    p.textAlign(p.CENTER, p.CENTER);
+                    p.text(glitch.text, glitch.x, glitch.y);
+                    
+                    // Random position jitter
+                    if (p.frameCount % 5 === 0) {
+                        glitch.x += p.random(-5, 5);
+                        glitch.y += p.random(-5, 5);
+                    }
+                    
+                    // Remove dead glitches
+                    if (glitch.life <= 0) {
+                        glitchText.splice(i, 1);
+                    }
+                }
+            }
+
+            function updateShipMovement() {
+                let target = neuralConnections[targetNeuron];
+                let dx = target.x - ship.x;
+                let dy = target.y - ship.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 5) {
+                    // Calculate angle to target
+                    let angle = Math.atan2(dy, dx);
+                    ship.angle = angle;
+                    
+                    // Move ship
+                    ship.x += Math.cos(angle) * ship.speed;
+                    ship.y += Math.sin(angle) * ship.speed;
+                    
+                    // Create particles behind ship
+                    if (p.frameCount % 3 === 0) {
+                        let particleAngle = angle + p.PI + p.random(-0.2, 0.2);
+                        particles.push({
+                            x: ship.x - Math.cos(angle) * 15,
+                            y: ship.y - Math.sin(angle) * 15,
+                            vx: Math.cos(particleAngle) * p.random(1, 3),
+                            vy: Math.sin(particleAngle) * p.random(1, 3),
+                            size: p.random(2, 5),
+                            life: 30,
+                            hue: p.random(20, 40)
+                        });
+                    }
+                } else {
+                    // Reached target
+                    shipMoving = false;
+                    targetNeuron = null;
+                    
+                    // Mark neuron as visited
+                    target.visited = true;
+                    reachedNodeCount++;
+                    
+                    // Add some particles for effect
+                    for (let i = 0; i < 10; i++) {
+                        let angle = p.random(p.TWO_PI);
+                        particles.push({
+                            x: target.x,
+                            y: target.y,
+                            vx: Math.cos(angle) * p.random(1, 3),
+                            vy: Math.sin(angle) * p.random(1, 3),
+                            size: p.random(2, 6),
+                            life: p.random(20, 50),
+                            hue: 180 // Blue particles for connection
+                        });
+                    }
+                    
+                    // Pulse all connected neurons
+                    for (let i = 0; i < target.connections.length; i++) {
+                        neuralConnections[target.connections[i]].pulse = 0.1;
+                    }
+                    
+                    // Play pulse sound
+                    if (audioEnabled && pulseSound) {
+                        pulseSound.play();
+                    }
+                    
+                    // Update status
+                    statusBarDiv.innerHTML = `NEURAL NODE ${reachedNodeCount} LINKED | ${Math.floor(reachedNodeCount / neuralConnections.length * 100)}% NETWORK MAPPED`;
+                    
+                    // Add terminal text
+                    addTerminalText(`$ neural node ${reachedNodeCount} accessed`);
+                    
+                    // Add research info
+                    if (reachedNodeCount % 3 === 0 && reachedNodeCount <= researchInfo.length) {
+                        let infoIndex = reachedNodeCount / 3 - 1;
+                        addTerminalText(researchInfo[infoIndex]);
+                    }
+                    
+                    // If we've visited enough nodes, activate wormhole
+                    if (reachedNodeCount >= neuralConnections.length * 0.6 && !wormhole.clickable) {
+                        wormhole.clickable = true;
+                        
+                        // Show wormhole hint
+                        setTimeout(showWormholeHint, 2000);
+                        
+                        // Update status
+                        statusBarDiv.innerHTML = "SUBSPACE ANOMALY DETECTED | WORMHOLE FORMING";
+                        
+                        // Add terminal text
+                        addTerminalText("$ WARNING: SUBSPACE ANOMALY DETECTED");
+                        addTerminalText("$ WORMHOLE FORMATION IN PROGRESS");
+                        addTerminalText("$ RECOMMEND INVESTIGATION");
+                        
+                        // Play notification sound
+                        if (audioEnabled && notificationSound) {
+                            notificationSound.play();
+                        }
+                    }
+                }
+            }
+
+            function handleCanvasClick(event) {
+                // Get canvas-relative coordinates
+                let rect = p5Canvas.getBoundingClientRect();
+                let x = event.clientX - rect.left;
+                let y = event.clientY - rect.top;
+                
+                // Clear hint timeout
+                clearTimeout(hintTimeout);
+                
+                if (currentSection === "intro") {
+                    // Move to research section
+                    currentSection = "research";
+                    setupSection(currentSection);
+                    addTerminalText("$ accessing neural research database...");
+                    addTerminalText("$ mapping neural pathways...");
+                    addTerminalText("$ click on neural nodes to interface");
+                    statusBarDiv.innerHTML = "DATABASE LINKED | CLICK NEURAL NODES TO EXPLORE";
+                    
+                    // Show restart button
+                    restartButtonDiv.style.display = "block";
+                    
+                    return;
+                }
+                
+                // Check if clicked on wormhole
+                if (wormhole.active && wormhole.clickable) {
+                    let dx = x - wormhole.x;
+                    let dy = y - wormhole.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < wormhole.size / 2) {
+                        // Enter wormhole
+                        enterWormhole();
+                        return;
+                    }
+                }
+                
+                // Check if clicked on a neuron
+                if (currentSection === "research" || currentSection === "vr") {
+                    let closestNeuron = -1;
+                    let closestDistance = 30; // Max click distance
+                    
+                    for (let i = 0; i < neuralConnections.length; i++) {
+                        let neuron = neuralConnections[i];
+                        let dx = x - neuron.x;
+                        let dy = y - neuron.y;
+                        let distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestNeuron = i;
+                        }
+                    }
+                    
+                    // Move ship to target neuron
+                    if (closestNeuron !== -1 && !shipMoving && !wormholeEntering) {
+                        targetNeuron = closestNeuron;
+                        shipMoving = true;
+                        
+                        // Play notification sound
+                        if (audioEnabled && notificationSound) {
+                            notificationSound.play();
+                        }
+                    }
+                }
+            }
+
+            function enterWormhole() {
+                if (!wormholeEntering) {
+                    wormholeEntering = true;
+                    addTerminalText("$ INITIATING WORMHOLE ENTRY");
+                    addTerminalText("$ WARNING: UNSTABLE QUANTUM FLUCTUATIONS DETECTED");
+                    
+                    // Hide wormhole hint
+                    hideWormholeHint();
+                    
+                    // Play wormhole sound
+                    if (audioEnabled && wormholeSound) {
+                        wormholeSound.play();
+                    }
+                    
+                    // Update status
+                    statusBarDiv.innerHTML = "WORMHOLE ENTRY SEQUENCE | CALCULATING TRAJECTORY";
+                }
+            }
+
+            function setupSection(section) {
+                switch (section) {
+                    case "intro":
+                        break;
+                        
+                    case "research":
+                        wormhole.active = true;
+                        break;
+                        
+                    case "breakthrough":
+                        break;
+                        
+                    case "vr":
+                        break;
+                }
+            }
+
+            function addTerminalText(text) {
+                terminal.text.push(text);
+                terminal.currentLine = "$ ";
+                
+                // Max terminal history
+                if (terminal.text.length > 100) {
+                    terminal.text.shift();
+                }
+            }
+
+            function startGlitchInterval() {
+                glitchInterval = setInterval(() => {
+                    if (p.random() < 0.3) {
+                        createGlitchText();
+                    }
+                }, 1000);
+            }
+
+            function createGlitchText() {
+                let glitchStrings = [
+                    "NEURAL ERROR", 
+                    "DATA CORRUPTION", 
+                    "SYSTEM GLITCH",
+                    "BUFFER OVERFLOW",
+                    "QUANTUM FLUX",
+                    "REALITY BREACH",
+                    "NEURAL SPIKE"
+                ];
+                
+                let text = glitchStrings[Math.floor(p.random(glitchStrings.length))];
+                
+                glitchText.push({
+                    x: p.random(p.width),
+                    y: p.random(p.height),
+                    text: text,
+                    size: p.random(16, 30),
+                    life: p.random(20, 60),
+                    hue: p.random(0, 360)
+                });
+            }
+
+            function showHint() {
+                // First-time hint
+                addTerminalText("$ CLICK ANYWHERE TO BEGIN NEURAL INTERFACE");
+                statusBarDiv.innerHTML = "NEURAL INTERFACE READY | CLICK TO BEGIN";
+            }
+            
+            function showWormholeHint() {
+                wormholeHintShown = true;
+                wormholeHintDiv.innerHTML = "SUBSPACE ANOMALY DETECTED<br>CLICK WORMHOLE TO INVESTIGATE";
+                wormholeHintDiv.style.opacity = "1";
+                
+                // Hide after 5 seconds
+                setTimeout(hideWormholeHint, 5000);
+            }
+            
+            function hideWormholeHint() {
+                wormholeHintDiv.style.opacity = "0";
+            }
+            
+            function restartExperience() {
+                // Reset system
+                wormhole.active = true;
+                wormhole.clickable = false;
+                wormholeEntering = false;
+                wormholeExplosion = false;
+                wormholeHintShown = false;
+                ship.visible = true;
+                ship.x = p.width * 0.78;
+                ship.y = p.height * 0.8;
+                ship.size = 30;
+                shipMoving = false;
+                targetNeuron = null;
+                reachedNodeCount = 0;
+                
+                // Clear particles
+                particles = [];
+                
+                // Reset neural connections
+                for (let i = 0; i < neuralConnections.length; i++) {
+                    neuralConnections[i].visited = false;
+                    neuralConnections[i].pulse = 0;
+                }
+                
+                // Update terminal
+                addTerminalText("$ system reset");
+                addTerminalText("$ recalibrating neural interface...");
+                addTerminalText("$ click on neural nodes to interface");
+                
+                // Update status
+                statusBarDiv.innerHTML = "SYSTEM RESET | CLICK NEURAL NODES TO EXPLORE";
+                
+                // Hide wormhole hint
+                hideWormholeHint();
+            }
+            
+            function initAudio() {
+                // Create Audio Context
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create notification sound
+                notificationSound = audioContext.createOscillator();
+                let notificationGain = audioContext.createGain();
+                notificationGain.gain.value = 0;
+                notificationSound.frequency.value = 880;
+                notificationSound.connect(notificationGain);
+                notificationGain.connect(audioContext.destination);
+                
+                notificationSound.start();
+                notificationSound.stop(audioContext.currentTime + 0.1);
+                
+                // Create function to play notification
+                notificationSound.play = function() {
+                    let osc = audioContext.createOscillator();
+                    let gain = audioContext.createGain();
+                    
+                    osc.frequency.value = 880;
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    gain.gain.setValueAtTime(0, audioContext.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.01);
+                    gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                    
+                    osc.start();
+                    osc.stop(audioContext.currentTime + 0.3);
+                };
+                
+                // Create pulse sound
+                pulseSound = {
+                    play: function() {
+                        let osc = audioContext.createOscillator();
+                        let gain = audioContext.createGain();
+                        
+                        osc.frequency.value = 440;
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        gain.gain.setValueAtTime(0, audioContext.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.01);
+                        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+                        
+                        osc.start();
+                        osc.stop(audioContext.currentTime + 0.2);
+                    }
+                };
+                
+                // Create explosion sound
+                explosionSound = {
+                    play: function() {
+                        let noise = audioContext.createBufferSource();
+                        let buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+                        let data = buffer.getChannelData(0);
+                        
+                        for (let i = 0; i < buffer.length; i++) {
+                            data[i] = Math.random() * 2 - 1;
+                        }
+                        
+                        noise.buffer = buffer;
+                        
+                        let filter = audioContext.createBiquadFilter();
+                        filter.type = "lowpass";
+                        filter.frequency.value = 400;
+                        
+                        let gain = audioContext.createGain();
+                        gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+                        
+                        noise.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        noise.start();
+                        noise.stop(audioContext.currentTime + 1.5);
+                    }
+                };
+                
+                // Create wormhole sound
+                wormholeSound = {
+                    play: function() {
+                        // Base oscillator
+                        let osc = audioContext.createOscillator();
+                        let gain = audioContext.createGain();
+                        
+                        osc.frequency.value = 150;
+                        osc.type = "sawtooth";
+                        
+                        // Create filter
+                        let filter = audioContext.createBiquadFilter();
+                        filter.type = "bandpass";
+                        filter.frequency.value = 800;
+                        filter.Q.value = 2;
+                        
+                        // Connect nodes
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        // Envelope
+                        gain.gain.setValueAtTime(0, audioContext.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.5);
+                        gain.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 2);
+                        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 4);
+                        
+                        // Frequency sweep
+                        osc.frequency.setValueAtTime(150, audioContext.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 4);
+                        
+                        // Start and stop
+                        osc.start();
+                        osc.stop(audioContext.currentTime + 4);
+                    }
+                };
+                
+                // Create background oscillator
+                oscillator = audioContext.createOscillator();
+                synthGain = audioContext.createGain();
+                
+                oscillator.type = "sine";
+                oscillator.frequency.value = 150;
+                synthGain.gain.value = 0;
+                
+                oscillator.connect(synthGain);
+                synthGain.connect(audioContext.destination);
+                
+                oscillator.start();
+            }
+            
+            function toggleAudio() {
+                audioEnabled = !audioEnabled;
+                
+                if (audioEnabled) {
+                    // Resume audio context if suspended
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume();
+                    }
+                    
+                    // Set gain
+                    synthGain.gain.setValueAtTime(0, audioContext.currentTime);
+                    synthGain.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.5);
+                    
+                    // Update button
+                    audioButtonDiv.innerHTML = "AUDIO: ON";
+                    
+                    // Play notification
+                    notificationSound.play();
+                } else {
+                    // Mute all sounds
+                    synthGain.gain.setValueAtTime(synthGain.gain.value, audioContext.currentTime);
+                    synthGain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+                    
+                    // Update button
+                    audioButtonDiv.innerHTML = "AUDIO: OFF";
+                }
+            }
+        };
+
+        // Create a new p5 instance
+        new p5(sketch);
+    </script>
+    
+</body>
+</html>
